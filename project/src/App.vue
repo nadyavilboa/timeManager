@@ -1,14 +1,14 @@
 <template>
-  <TimeManager msg="Welcome to Your Vue.js App"/>
+  <v-TimeManager msg="Welcome to Your Vue.js App"/>
 </template>
 
 <script>
-import TimeManager from './components/TimeManager.vue'
+import vTimeManager from './components/v-TimeManager.vue'
 
 export default {
   name: 'App',
   components: {
-    TimeManager
+    vTimeManager
   }
 }
 </script>
