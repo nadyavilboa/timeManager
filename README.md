@@ -1,6 +1,7 @@
 # timeManager
 <h3>Порядок запуска</h3>
 <ul>
+    <li>cd project</li>
     <li>npm i</li>
     <li>npm run start</li>
 </ul>
