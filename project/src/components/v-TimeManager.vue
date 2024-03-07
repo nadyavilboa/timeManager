@@ -29,11 +29,22 @@
           type="number"
           id="timer-input"
           name="timer-input"
+          :disabled="isInputDisabled"
+          ref="inputElement"
           @change="inputChange($event.target.value)"
+          @keyup.enter="enterKeyHandler"
         />
       </div>
       <div class="timers-wrapper">
-        <v-Timer v-for="timer in timers" :key="timer.id" v-show="timer.isShow" :value="timer.value" :isWork="timer.isWork" />
+        <v-Timer
+          v-for="timer in timers"
+          :key="timer.id"
+          v-show="timer.isShow"
+          :value="timer.value"
+          :isWork="timer.isWork"
+          :isPaused="timer.isPaused"
+          :isContinue="timer.isContinue"
+        />
       </div>
     </div>
     <div class="buttons-wrapper">
@@ -44,7 +55,13 @@
       >
         {{ startOrStop ? 'Сброс' : 'Старт' }}
       </button>
-      <button class="btn" disabled>Пауза</button>
+      <button
+        class="btn"
+        :disabled="disabledPause"
+        @click="stopTimer"
+      >
+        {{ pauseOrContinue ? 'Продолжить' : 'Пауза' }}
+      </button>
     </div>
   </div>
 </template>
@@ -59,7 +76,6 @@ export default {
   },
   data() {
     return {
-      isFirst: true,
       timers: [
         {
           id: 0,
@@ -68,6 +84,7 @@ export default {
           isShow: true,
           isStartDisabled: true,
           isPaused: false,
+          isContinue: false,
           isWork: false,
         },
         {
@@ -77,10 +94,10 @@ export default {
           isShow: false,
           isStartDisabled: true,
           isPaused: false,
+          isContinue: false,
           isWork: false,
         }
       ],
-      inputElement: null,
     }
   },
   computed: {
@@ -93,42 +110,103 @@ export default {
     },
     startOrStop() {
       const activeTimer = this.getActiveTimer;
-      activeTimer.isStartDisabled = !activeTimer.isWork
+      activeTimer.isStartDisabled = !activeTimer.isWork;
       return activeTimer ? activeTimer.isWork : false;
     },
+    isInputDisabled() {
+      const activeTimer = this.getActiveTimer;
+      return activeTimer.isWork || activeTimer.isPaused;
+    },
+    disabledPause() {
+      const activeTimer = this.getActiveTimer;
+      return activeTimer ? !activeTimer.isWork : true;
+    },
+    pauseOrContinue() {
+      const activeTimer = this.getActiveTimer;
+      return activeTimer ? activeTimer.isPaused : false;
+    }
   },
   methods: {
+    // переключение между таймерами
     toggleTimer() {
-      // переключение таймера
       this.timers.forEach(timer => {
         if (timer) {
           timer.isShow = !timer.isShow;
         }
       })
 
-      this.inputElement.value = '';
+      this.$refs.inputElement.value = '';
 
     },
+
+    // принимаем целые положительные числа не начинающиеся с нуля, без знаков
     inputChange(value) {
+      const inputVal = value;
+      let inputNumbers = '';
+
+      for (let i = 0; i < inputVal.length; i++) {
+        const currentChar = inputVal[i];
+
+        if (['+', '-', '.'].includes(currentChar)) {
+          continue;
+        }
+
+        if (!Number.isInteger(Number(currentChar))) {
+            continue;
+        }
+        
+        inputNumbers = inputNumbers.concat(currentChar);
+      }
+
+      // проверяем, что получилось число, делаем его положительным
+      if (!isNaN(inputNumbers)) {
+        inputNumbers = Number(Math.abs(inputNumbers));
+      }
+
+      this.$refs.inputElement.value = String(inputNumbers);
+
       const activeTimer = this.getActiveTimer;
       if (activeTimer) {
-        activeTimer.value = Number(value);
+        activeTimer.value = Number(inputNumbers);
         activeTimer.isStartDisabled = false;
       }
     },
+
+    // запуск таймера
     workTimer() {
       const activeTimer = this.getActiveTimer;
       if (activeTimer) {
         activeTimer.isWork = !activeTimer.isWork;
       }
       
-      if (this.inputElement) {
-        this.inputElement.value = '';
+      if (this.$refs.inputElement) {
+        this.$refs.inputElement.value = '';
+      }
+
+      //состояние кнопки старт
+      activeTimer.isStartDisabled = activeTimer.isWork;
+
+      // сброс кнопки Пауза, если таймер сброшен
+      activeTimer.isPaused = !activeTimer.isWork ? false : activeTimer.isPaused;
+    },
+    enterKeyHandler() {
+      this.$refs.inputElement.value ? this.workTimer() : '';
+    },
+    stopTimer() {
+      const activeTimer = this.getActiveTimer;
+      activeTimer.isPaused = !activeTimer.isPaused;
+
+      if (!activeTimer.isPaused) {
+        activeTimer.isWork = true;
+        activeTimer.isContinue = true;
       }
     }
   },
   mounted() {
-    this.inputElement = document.querySelector('#timer-input');
+    // нужно обрабатывать нажатие для всего документа
+    document.addEventListener( 'keyup', event => {
+      if( event.code === 'Enter' ) this.enterKeyHandler();
+    });
   }
 }
 </script>
@@ -192,6 +270,11 @@ export default {
     padding: 8px 10px;
     border: 2px solid #048a81;
     border-radius: 6px;
+  }
+
+  .input-wrapper .input:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 
   .buttons-wrapper {

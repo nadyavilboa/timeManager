@@ -25,6 +25,18 @@
         default() {
           return false
         }
+      },
+      isPaused: {
+        type: Boolean,
+        default() {
+          return false
+        }
+      },
+      isContinue: {
+        type: Boolean,
+        default() {
+          return false
+        }
       }
     },
     data() {
@@ -49,11 +61,14 @@
         return this.formatTimerVal(hh) + ':' + this.formatTimerVal(mm) + ':' + this.formatTimerVal(ss);
       },
       animateTimer() {
-        console.log(this.currentTime);
         let timerId = setInterval(() => {
           if (this.currentTime === 0) {
             clearInterval(timerId);
             this.isEndTimer = true;
+            return;
+          }
+          if (this.isPaused) {
+            clearInterval(timerId);
             return;
           }
           this.currentTime--;
@@ -66,12 +81,13 @@
           this.currentTime = Number(this.value) * this.SECONDS_IN_MINUTE;
           this.animateTimer();
         }
-      }
+      },
+      isContinue: function(newVal) {
+        if (newVal) {
+          this.animateTimer();
+        }
+      },
     },
-    mounted() {
-      console.log('mounted');
-      console.log(this.currentTime);
-    }
   }
 </script>
 
